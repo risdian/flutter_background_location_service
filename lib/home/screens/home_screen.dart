@@ -45,11 +45,18 @@ class _HomeScreenState extends State<HomeScreen> {
           longitude: double.tryParse(event['longitude'].toString()) ?? 0.0,
           latitude: double.tryParse(event['latitude'].toString()) ?? 0.0,
           timestamp: DateTime.fromMillisecondsSinceEpoch(
-              event['timestamp'].toInt(),
-              isUtc: true),
+            event['timestamp'].toInt(),
+            isUtc: true,
+          ),
           accuracy: double.tryParse(event['accuracy'].toString()) ?? 0.0,
           altitude: double.tryParse(event['altitude'].toString()) ?? 0.0,
+          altitudeAccuracy:
+              double.tryParse(event['altitude_accuracy'].toString()) ??
+                  0.0, // Added accuracy for altitude
           heading: double.tryParse(event['heading'].toString()) ?? 0.0,
+          headingAccuracy:
+              double.tryParse(event['heading_accuracy'].toString()) ??
+                  0.0, // Added accuracy for heading
           speed: double.tryParse(event['speed'].toString()) ?? 0.0,
           speedAccuracy:
               double.tryParse(event['speed_accuracy'].toString()) ?? 0.0,

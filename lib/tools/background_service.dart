@@ -6,14 +6,13 @@ import 'package:flutter_background_location_service/utility/shared_preference/sh
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:flutter_background_service_android/flutter_background_service_android.dart';
 
 const String notificationChannelId = "foreground_service";
 const int foregroundServiceNotificationId = 888;
 const String initialNotificationTitle = "TRACK YOUR LOCATION";
 const String initialNotificationContent = "Initializing";
 
-const int timeInterval = 10; //in seconds
+const int timeInterval = 15; //in seconds
 
 @pragma('vm:entry-point')
 void onStart(ServiceInstance service) async {
@@ -35,32 +34,72 @@ void onStart(ServiceInstance service) async {
     await service.stopSelf();
   });
 
-  // bring to foreground
+  // // bring to foreground
+
+  // Timer.periodic(const Duration(seconds: timeInterval), (timer) async {
+  //   if (service is AndroidServiceInstance) {
+  //     if (await service.isForegroundService()) {
+  //       Geolocator.getPositionStream().listen((Position position) async {
+  //         final permission = await Geolocator.checkPermission();
+  //         if (permission == LocationPermission.always) {
+  //           service.invoke('on_location_changed', position.toJson());
+
+  //           final userName = await CustomSharedPreference()
+  //               .getData(key: SharedPreferenceKeys.userName);
+
+  //           await NotificationService(FlutterLocalNotificationsPlugin())
+  //               .showNotification(
+  //             showNotificationId: foregroundServiceNotificationId,
+  //             title: "Hii, $userName",
+  //             body:
+  //                 'Your Latitude: ${position.latitude}, Longitude: ${position.longitude}',
+  //             payload: "service",
+  //             androidNotificationDetails: const AndroidNotificationDetails(
+  //               notificationChannelId,
+  //               notificationChannelId,
+  //               ongoing: true,
+  //             ),
+  //           );
+  //         }
+  //       });
+  //     }
+  //   }
+  // });
+
+  DateTime lastLocationUpdate = DateTime.now();
 
   Timer.periodic(const Duration(seconds: timeInterval), (timer) async {
     if (service is AndroidServiceInstance) {
       if (await service.isForegroundService()) {
-        Geolocator.getPositionStream().listen((Position position) async {
+        Geolocator.getPositionStream(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 10, // Update only if the user moves 10 meters
+          ),
+        ).listen((Position position) async {
           final permission = await Geolocator.checkPermission();
           if (permission == LocationPermission.always) {
-            service.invoke('on_location_changed', position.toJson());
+            // Throttle to only once every `timeInterval` seconds
+            DateTime now = DateTime.now();
+            if (now.difference(lastLocationUpdate).inSeconds >= timeInterval) {
+              lastLocationUpdate = now;
 
-            final userName = await CustomSharedPreference()
-                .getData(key: SharedPreferenceKeys.userName);
+              service.invoke('on_location_changed', position.toJson());
 
-            await NotificationService(FlutterLocalNotificationsPlugin())
-                .showNotification(
-              showNotificationId: foregroundServiceNotificationId,
-              title: "Hii, $userName",
-              body:
-                  'Your Latitude: ${position.latitude}, Longitude: ${position.longitude}',
-              payload: "service",
-              androidNotificationDetails: const AndroidNotificationDetails(
-                notificationChannelId,
-                notificationChannelId,
-                ongoing: true,
-              ),
-            );
+              await NotificationService(FlutterLocalNotificationsPlugin())
+                  .showNotification(
+                showNotificationId: foregroundServiceNotificationId,
+                title: "Location Update",
+                body:
+                    'Latitude: ${position.latitude}, Longitude: ${position.longitude}',
+                payload: "service",
+                androidNotificationDetails: const AndroidNotificationDetails(
+                  notificationChannelId,
+                  notificationChannelId,
+                  ongoing: true,
+                ),
+              );
+            }
           }
         });
       }
