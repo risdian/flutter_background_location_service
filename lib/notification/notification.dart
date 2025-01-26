@@ -56,16 +56,6 @@ class NotificationService {
     String? body,
     String? payload,
   }) async {
-    //Demo
-    //  var androidPlatformChannelSpecifics = AndroidNotificationDetails(
-    //   channelId,
-    //   channelName,
-    //   channelDescription: channelDescription,
-    //   playSound: false,
-    //   importance: Importance.max,
-    //   priority: Priority.high,
-    // );
-
     var platformChannelSpecifics =
         NotificationDetails(android: androidNotificationDetails);
 
